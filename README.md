@@ -7,7 +7,6 @@ resize your picture
 ```
 $ ./installer
 $ gem install colorize
-$ gem install rmagick
 ```
 
 # Usage

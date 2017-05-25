@@ -1,1 +1,2 @@
 cp picfit /usr/local/bin
+brew install imagemagick
