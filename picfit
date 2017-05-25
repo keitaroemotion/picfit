@@ -1,0 +1,44 @@
+#!/usr/bin/env ruby
+
+require 'rubygems'
+require 'RMagick'
+require 'colorize'
+
+def read(file_path)
+  puts file_path.green
+  Magick::Image.read(file_path).first
+end
+
+def resize(file_path, width, height)
+  image = read(file_path)
+  image = image.resize(width, height)
+  image.write("#{file_path}_#{width}_#{height}.png")
+end
+
+args = ARGV
+
+if args.size == 0
+  abort "\nyou need file path as argument\n\n"
+end
+
+def get_size
+  print "[w, h:] "
+  width, height = $stdin.gets.chomp.split.map{|x| x.to_i}
+  if width.nil? || height.nil?
+    puts "\nyou need to input width and height\n\n"
+    return get_size
+  end
+  [width, height]
+end  
+
+width, height = get_size
+
+args.each do |arg|
+  if File.directory?(arg)
+    Dir["#{arg}/**/*"].each do |f|
+      resize(f, width, height)
+    end
+  else
+    resize(arg, width, height)
+  end
+end
