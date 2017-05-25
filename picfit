@@ -12,7 +12,9 @@ end
 def resize(file_path, width, height)
   image = read(file_path)
   image = image.resize(width, height)
-  image.write("#{file_path}_#{width}_#{height}.png")
+  dir   = "#{File.dirname(file_path)}/#{width}_#{height}"
+  system "mkdir -p #{dir}"
+  image.write("#{dir}/#{File.basename(file_path)}.png")
 end
 
 args = ARGV
