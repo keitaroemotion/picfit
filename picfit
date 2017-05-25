@@ -4,17 +4,50 @@ require 'rubygems'
 require 'RMagick'
 require 'colorize'
 
+def mkdirp
+  system "mkdir -p #{pattern_dir}"
+end
+
+def pattern_dir
+  "/usr/local/etc/picfit/"
+end
+
+def pattern_file
+  "#{pattern_dir}/pattern.dsl"
+end
+
+def add_pattern
+  print "[name:] "
+  name          = $stdin.gets.chomp
+  width, height = get_size
+  mkdirp
+  f = File.open(pattern_file, "a")
+  f.puts "#{name} #{width} #{height}"
+  f.close
+end
+
+def read_pattern
+  pattern = {}
+  File.open(pattern_file, "r").map do |line|
+    key, width, height = line.split(" ")
+    pattern[key] = [width, height]
+  end
+  pattern
+end
+
 def read(file_path)
   puts file_path.green
   Magick::Image.read(file_path).first
 end
 
 def resize(file_path, width, height)
-  image = read(file_path)
-  image = image.resize(width, height)
-  dir   = "#{File.dirname(file_path)}/#{width}_#{height}"
-  system "mkdir -p #{dir}"
-  image.write("#{dir}/#{File.basename(file_path)}.png")
+  if !/(\.png|\.jpg|\.gif|\.jpeg|\.JPG)$/.match(file_path).nil?
+    image = read(file_path)
+    image = image.resize(width, height)
+    dir   = "#{File.dirname(file_path)}/#{width}_#{height}"
+    system "mkdir -p #{dir}"
+    image.write("#{dir}/#{File.basename(file_path)}.png")
+  end  
 end
 
 args = ARGV
@@ -33,14 +66,35 @@ def get_size
   [width, height]
 end  
 
-width, height = get_size
-
-args.each do |arg|
-  if File.directory?(arg)
-    Dir["#{arg}/**/*"].each do |f|
-      resize(f, width, height)
-    end
-  else
-    resize(arg, width, height)
+case args[0]
+when "-a"
+  add_pattern
+when "-l"
+  read_pattern.each do |key, e|
+    puts "[#{key}] width: #{e[0]} height: #{e[1]}"
   end
+when "-m"  
+  system "vim #{pattern_file}"
+when "--help" , "-h"
+ puts
+ puts "-a ... add resize pattern"
+ puts "-l ... enlist resize pattern"
+ puts "-m ... modify resize pattern"
+ puts "[pattern] ... resize according as pattern"
+ puts "[none]    ... resize manually"
+ puts
+else
+  pattern = read_pattern
+  key = args.select{|arg| pattern.include?(arg)}
+  width, height = key.size == 1 ? read_pattern[key[0]].map{|x| x.to_i} : get_size
+  puts "size: #{width}, #{height}"
+  args.each do |arg|
+    if File.directory?(arg)
+      Dir["#{arg}/**/*"].each do |f|
+        resize(f, width, height)
+      end
+    else
+      resize(arg, width, height)
+    end
+  end  
 end
